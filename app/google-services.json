@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "832091205215",
+    "firebase_url": "https://visitorapp-33bb8.firebaseio.com",
+    "project_id": "visitorapp-33bb8",
+    "storage_bucket": "visitorapp-33bb8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:832091205215:android:5a1cb18277b5971d",
+        "android_client_info": {
+          "package_name": "com.example.venomousboxer.visitorapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "832091205215-ccbhmodnbgbth84dsu96r4ejopmla14m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.venomousboxer.visitorapp",
+            "certificate_hash": "60fd96b869814e02bb2b887ed83b81df422ac2ee"
+          }
+        },
+        {
+          "client_id": "832091205215-shkagobpjptprtv8t09f4p2jhdg26umb.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDrTu4-cuEPtQtM0IWjDF9jhLl5ur1GMrg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "832091205215-shkagobpjptprtv8t09f4p2jhdg26umb.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
