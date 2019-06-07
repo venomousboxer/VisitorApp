@@ -28,8 +28,8 @@ class VerificationCodeActivity : AppCompatActivity() {
     private lateinit var verificationCode: EditText
     private lateinit var verificationButton: Button
     var codeSent: String? = null
-    var downloadUri: String? = null
-    var phoneNo: String? = null
+    private var downloadUri: String? = null
+    private var phoneNo: String? = null
     private val auth: FirebaseAuth? = FirebaseAuth.getInstance()
     private val db = FirebaseDatabase.getInstance().reference
     var entered = false
@@ -41,6 +41,7 @@ class VerificationCodeActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_verification_code)
+        entered=false
 
         verificationCode = findViewById(R.id.verification_code_ET)
         verificationButton = findViewById(R.id.verification_button)
@@ -71,8 +72,17 @@ class VerificationCodeActivity : AppCompatActivity() {
         Log.d(TAG,"OTP code sent")
         verificationButton.setOnClickListener {
             val code = verificationCode.text.toString()
-            val credential = PhoneAuthProvider.getCredential(codeSent!!, code)
-            signInWithPhoneAuthCredential(credential)
+            try {
+                val credential = PhoneAuthProvider.getCredential(codeSent!!, code)
+                signInWithPhoneAuthCredential(credential)
+            }catch (e:Exception){
+                val s = Snackbar.make(verificationButton, "Invalid code", Snackbar.LENGTH_SHORT)
+                s.view.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                val tv = s.view.findViewById<TextView>(R.id.snackbar_text)
+                tv.textAlignment = View.TEXT_ALIGNMENT_CENTER
+                s.show()
+                finish()
+            }
         }
 
     }
@@ -90,21 +100,33 @@ class VerificationCodeActivity : AppCompatActivity() {
                         val dbProfile = db.child("Visitors")
                         dbProfile.child(phoneNo!!).addListenerForSingleValueEvent(object : ValueEventListener{
                             override fun onDataChange(p0: DataSnapshot) {
-                                vc = p0.child("visitCount").getValue(Int::class.java)!!
+                                try {
+                                    vc = p0.child("visitCount").getValue(Int::class.java)!!
+                                }catch (e: Exception){
+                                    e.printStackTrace()
+                                }
                                 vc++
+                                val dbProfile = db.child("Visitors")
+                                val key = dbProfile.child(phoneNo!!).push().key
+                                val user = User(vc, key!!, downloadUri!!)
+                                dbProfile.child(phoneNo!!).setValue(user)
+                                val intent = Intent(this@VerificationCodeActivity, VisitorActivity::class.java)
+                                intent.putExtra("VisitorCount", vc)
+                                startActivity(intent)
                             }
                             override fun onCancelled(p0: DatabaseError) {
                                 //To change body of created functions use File | Settings | File Templates.
                             }
                         })
+                    }else{
+                        val dbProfile = db.child("Visitors")
+                        val key = dbProfile.child(phoneNo!!).push().key
+                        val user = User(vc, key!!, downloadUri!!)
+                        dbProfile.child(phoneNo!!).setValue(user)
+                        val intent = Intent(this@VerificationCodeActivity, VisitorActivity::class.java)
+                        intent.putExtra("VisitorCount", vc)
+                        startActivity(intent)
                     }
-                    val dbProfile = db.child("Visitors")
-                    val key = dbProfile.child(phoneNo!!).push().key
-                    val user = User(vc, key!!, downloadUri!!)
-                    dbProfile.child(phoneNo!!).setValue(user)
-                    val intent = Intent(this@VerificationCodeActivity, VisitorActivity::class.java)
-                    intent.putExtra("VisitorCount", 1)
-                    startActivity(intent)
                 } else {
                     // Sign in failed, display a message and update the UI
                     Log.w(TAG, "signInWithCredential:failure", task.exception)
@@ -115,7 +137,7 @@ class VerificationCodeActivity : AppCompatActivity() {
                         val key = dbProfile.child(phoneNo!!).push().key
                         val user = User(1, key!!, downloadUri!!)
                         dbProfile.child(phoneNo!!).setValue(user)
-                        val s = Snackbar.make(verificationButton, "Incorrect Phone Number", Snackbar.LENGTH_SHORT)
+                        val s = Snackbar.make(verificationButton, "Incorrect Phone Number or verification code", Snackbar.LENGTH_SHORT)
                         s.view.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimary))
                         val tv = s.view.findViewById<TextView>(R.id.snackbar_text)
                         tv.textAlignment = View.TEXT_ALIGNMENT_CENTER

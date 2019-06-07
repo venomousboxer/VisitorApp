@@ -1,7 +1,9 @@
 package com.example.venomousboxer.visitorapp
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
@@ -42,6 +44,7 @@ class MainActivity : AppCompatActivity() {
 
     private var cameraKitView: CameraKitView? = null
     lateinit var checkIn: Button
+    lateinit var signup: Button
     lateinit var takePhoto: Button
     private lateinit var phoneET: EditText
     private lateinit var imageView: ImageView
@@ -67,6 +70,7 @@ class MainActivity : AppCompatActivity() {
         phoneET = findViewById(R.id.phone_edit_text)
         takePhoto = findViewById(R.id.take_photo_button)
         imageView = findViewById(R.id.image_view)
+        signup = findViewById(R.id.sign_up_button)
 
         auth?.useAppLanguage()
 
@@ -75,16 +79,29 @@ class MainActivity : AppCompatActivity() {
         phoneET.clearFocus()
 
         takePhoto.setOnClickListener {
+            Log.d(TAG,"tk")
             //capture image
             if(takePhotoButton){
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                    != PackageManager.PERMISSION_GRANTED) {
+                    // Permission is not granted
+                    val s = Snackbar.make(takePhoto, "Please allow camera permission first", Snackbar.LENGTH_SHORT)
+                    s.view.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                    val tv = s.view.findViewById<TextView>(R.id.snackbar_text)
+                    tv.textAlignment = View.TEXT_ALIGNMENT_CENTER
+                    s.show()
+                    return@setOnClickListener
+                }
                 takePhotoButton=false
+                Log.d(TAG,"tk2")
                 //take and compress pic
-                cameraKitView?.captureImage { _ , capturedImage ->
+                cameraKitView?.captureImage { _, capturedImage ->
                     Log.d(TAG,"Inside camera kit")
                     savedPhoto = try{
                         createImageFile()
                     } catch (e: IOException){
                         e.printStackTrace()
+                        Log.e(TAG, "error", e)
                         return@captureImage
                     }
                     Log.d(TAG,"File created")
@@ -106,13 +123,48 @@ class MainActivity : AppCompatActivity() {
 
         }
 
+        signup.setOnClickListener {
+            val phoneNo = phoneET.text.toString()
+
+            if (!(phoneNo.length==13&& phoneNo[0]=='+')&&phoneNo.length != 12){
+                val s = Snackbar.make(checkIn, "Please enter a valid phone number with Country Code."
+                    , Snackbar.LENGTH_SHORT)
+                s.view.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                val tv = s.view.findViewById<TextView>(R.id.snackbar_text)
+                tv.textAlignment = View.TEXT_ALIGNMENT_CENTER
+                s.show()
+                //Toast.makeText(this@MainActivity, "Incorrect phone number", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if(takePhotoButton){
+                val s = Snackbar.make(checkIn, "PLease take photo first", Snackbar.LENGTH_SHORT)
+                s.view.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                val tv = s.view.findViewById<TextView>(R.id.snackbar_text)
+                tv.textAlignment = View.TEXT_ALIGNMENT_CENTER
+                s.show()
+                return@setOnClickListener
+            }
+            if(!proceed){
+                Log.d(TAG,"Upload Not Finished")
+                val s = Snackbar.make(checkIn, "Please wait while we upload your image to our servers."
+                    , Snackbar.LENGTH_SHORT)
+                s.view.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimary))
+                val tv = s.view.findViewById<TextView>(R.id.snackbar_text)
+                tv.textAlignment = View.TEXT_ALIGNMENT_CENTER
+                s.show()
+                //wait for upload to finish
+                return@setOnClickListener
+            }
+            verifyPhone(phoneNo)
+        }
+
         checkIn.setOnClickListener {
             //check if phone no is correct
             val phoneNo = phoneET.text.toString()
 
-            if (!(phoneNo.length==10 || (phoneNo.length==13&& phoneNo[0]=='+')
-                || phoneNo.length==12)){
-                val s = Snackbar.make(checkIn, "Incorrect Phone Number", Snackbar.LENGTH_SHORT)
+            if (!(phoneNo.length==13&& phoneNo[0]=='+')&&(phoneNo.length!=12)){
+                val s = Snackbar.make(checkIn, "Please enter a valid phone number with Country Code."
+                    , Snackbar.LENGTH_SHORT)
                 s.view.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimary))
                 val tv = s.view.findViewById<TextView>(R.id.snackbar_text)
                 tv.textAlignment = View.TEXT_ALIGNMENT_CENTER
@@ -154,17 +206,6 @@ class MainActivity : AppCompatActivity() {
                     Log.e(TAG, "onCancelled", p0.toException())
                 }
             })
-            if(!entered){
-                if(takePhotoButton){
-                    return@setOnClickListener
-                }
-                if(!proceed){
-                    Log.d(TAG,"Upload Not Finished")
-                    //wait for upload to finish
-                    return@setOnClickListener
-                }
-                verifyPhone(phoneNo)
-            }
         }
     }
 
@@ -215,7 +256,8 @@ class MainActivity : AppCompatActivity() {
                         imageView.setImageBitmap(b)
                         takePhoto.text = "REDO"
                         // save image in firebase storage
-                        val imageRef = storage.reference.child("images/image"+System.currentTimeMillis()+".jpg")
+                        val imageRef = storage.reference
+                            .child("images/image"+System.currentTimeMillis()+".jpg")
                         val metadata = StorageMetadata.Builder()
                             .setContentType("image/jpg")
                             .build()
@@ -239,7 +281,8 @@ class MainActivity : AppCompatActivity() {
                     },
                     {
                         it.printStackTrace()
-                        val s = Snackbar.make(takePhoto, "Error occurred while compressing image", Snackbar.LENGTH_SHORT)
+                        val s = Snackbar.make(takePhoto, "Error occurred while compressing image"
+                            , Snackbar.LENGTH_SHORT)
                         s.view.setBackgroundColor(ContextCompat.getColor(this, R.color.colorPrimary))
                         val tv = s.view.findViewById<TextView>(R.id.snackbar_text)
                         tv.textAlignment = View.TEXT_ALIGNMENT_CENTER
@@ -254,18 +297,20 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        takePhotoButton = true
-        cameraKitView?.visibility = View.VISIBLE
-        imageView.visibility = View.GONE
+//        takePhotoButton = true
+//        cameraKitView?.visibility = View.VISIBLE
+//        imageView.visibility = View.GONE
         cameraKitView?.onStart()
+//        takePhoto.text = "TAKE PHOTO"
     }
 
     override fun onResume() {
         super.onResume()
-        takePhotoButton = true
-        cameraKitView?.visibility = View.VISIBLE
-        imageView.visibility = View.GONE
+//        takePhotoButton = true
+//        cameraKitView?.visibility = View.VISIBLE
+//        imageView.visibility = View.GONE
         cameraKitView?.onResume()
+//        takePhoto.text = "TAKE PHOTO"
     }
 
     override fun onPause() {
