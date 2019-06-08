@@ -117,7 +117,7 @@ class MainActivity : AppCompatActivity() {
                 takePhotoButton=true
                 //change name of button and invert views
                 cameraKitView?.visibility = View.VISIBLE
-                imageView.visibility = View.GONE
+                imageView.visibility = View.INVISIBLE
                 takePhoto.text = "TAKE PHOTO"
             }
 
@@ -173,7 +173,11 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            var entered = false
+            cameraKitView?.setErrorListener { _, e ->
+                e.printStackTrace()
+                Log.e(TAG, "Error : ", e)
+            }
+
             //sign in or sign up
             Log.d(TAG, "Past all if st.")
             val dbProfile = db.child("Visitors")
@@ -185,7 +189,6 @@ class MainActivity : AppCompatActivity() {
                             //sign in
                             var vc = p1.child("visitCount").getValue(Int::class.java)
                             if (vc!=null){
-                                entered=true
                                 vc++
                                 // update vc and downloadUrl
                                 dbProfile.child(phoneNo).child("visitCount").setValue(vc)
@@ -251,7 +254,7 @@ class MainActivity : AppCompatActivity() {
                         this.image = File(compressedImage?.path).readBytes()
                         Log.d(TAG, "2 : $image.toString()")
                         //make cameraKit invisible and show image view with compressed image
-                        cameraKitView?.visibility = View.GONE
+                        cameraKitView?.visibility = View.INVISIBLE
                         imageView.visibility = View.VISIBLE
                         imageView.setImageBitmap(b)
                         takePhoto.text = "REDO"
