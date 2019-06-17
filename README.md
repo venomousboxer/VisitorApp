@@ -1,5 +1,5 @@
 # VisitorApp
-Android app to manage visitors at reception.
+### Android app to manage visitors at reception.
 
 Application helps you check in using phone number and otp verification and then further clicks compresses and saves the image in friebase storage.
 
